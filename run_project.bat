@@ -92,8 +92,8 @@ echo.
 echo  ██████████████████████████████████████████████████████
 echo  ██                                                  ██
 echo  ██   SONIC  -  AI Lip-Sync Avatar Platform          ██
-echo  ██   AppXcess Technologies  ^|  Stella v1            ██
-echo  ██   CVPR 2025  ^|  SVD + Whisper + AudioProj        ██
+echo  ██   AppXcess Technologies  ^|  Stella v1           ██
+echo  ██   CVPR 2025  ^|  SVD + Whisper + AudioProj       ██
 echo  ██                                                  ██
 echo  ██████████████████████████████████████████████████████
 echo.
