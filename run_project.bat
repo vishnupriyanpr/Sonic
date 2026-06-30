@@ -13,9 +13,9 @@ title Sonic - AI Lip-Sync Avatar - AppXcess Technologies
 
 :: ──────────────────────────────────────────────────────────
 ::  CONFIGURATION
-::  HF token is read from hf_token.txt (gitignored).
-::  Create that file with your token before running:
-::    echo hf_YOUR_TOKEN_HERE > hf_token.txt
+::  HF token is stored in hf_token.txt (gitignored).
+::  If missing, this script will prompt you to enter it once
+::  and save it automatically for future runs.
 :: ──────────────────────────────────────────────────────────
 set "SCRIPT_DIR=%~dp0"
 set "VENV_DIR=%SCRIPT_DIR%.venv"
@@ -25,31 +25,65 @@ set "PIP_EXE=%VENV_DIR%\Scripts\pip.exe"
 set "LOG_FILE=%SCRIPT_DIR%setup_log.txt"
 set "TOKEN_FILE=%SCRIPT_DIR%hf_token.txt"
 
-:: ── Load HuggingFace token from hf_token.txt ──
-if not exist "%TOKEN_FILE%" (
-    echo.
-    echo  [ERROR] hf_token.txt not found in the Sonic directory.
-    echo  [ERROR] Please create it with your HuggingFace access token:
-    echo.
-    echo    echo hf_YOUR_TOKEN_HERE ^> hf_token.txt
-    echo.
-    echo  [ERROR] You can get a token at: https://huggingface.co/settings/tokens
-    echo  [ERROR] Make sure you have accepted the model licenses:
-    echo  [ERROR]   https://huggingface.co/LeonJoe13/Sonic
-    echo  [ERROR]   https://huggingface.co/stabilityai/stable-video-diffusion-img2vid-xt
-    echo.
-    pause
-    exit /b 1
+:: ── Load or create HuggingFace token ──────────────────────
+if exist "%TOKEN_FILE%" (
+    set /p HF_TOKEN=<"%TOKEN_FILE%"
+    set "HF_TOKEN=%HF_TOKEN: =%"
+    if "!HF_TOKEN!"=="" goto :ask_token
+    echo  [OK] HuggingFace token loaded from hf_token.txt.
+    goto :token_ready
 )
-set /p HF_TOKEN=<"%TOKEN_FILE%"
-:: Trim any trailing whitespace/CR from the token
+
+:ask_token
+echo.
+echo  ┌─────────────────────────────────────────────────────┐
+echo  │         HUGGINGFACE TOKEN REQUIRED                  │
+echo  │                                                     │
+echo  │  A HuggingFace access token is needed to download  │
+echo  │  the Sonic model weights (~11 GB).                  │
+echo  │                                                     │
+echo  │  Get your free token at:                            │
+echo  │    https://huggingface.co/settings/tokens           │
+echo  │                                                     │
+echo  │  Before entering your token, make sure you have    │
+echo  │  accepted the model licenses (browser, one-time):  │
+echo  │    https://huggingface.co/LeonJoe13/Sonic           │
+echo  │    https://huggingface.co/stabilityai/              │
+echo  │      stable-video-diffusion-img2vid-xt              │
+echo  └─────────────────────────────────────────────────────┘
+echo.
+set "HF_TOKEN="
+set /p HF_TOKEN="  Paste your HuggingFace token here and press Enter: "
+
+:: Strip any accidental spaces
 set "HF_TOKEN=%HF_TOKEN: =%"
+
 if "%HF_TOKEN%"=="" (
-    echo  [ERROR] hf_token.txt is empty. Please put your HuggingFace token in it.
+    echo.
+    echo  [ERROR] No token entered. Cannot download model weights without a token.
+    echo  [ERROR] Re-run this script and paste your token when prompted.
+    echo.
     pause
     exit /b 1
 )
-echo  [OK] HuggingFace token loaded from hf_token.txt.
+
+:: Basic sanity check — HF tokens start with "hf_"
+echo %HF_TOKEN% | findstr /r "^hf_" >nul 2>&1
+if %errorlevel% neq 0 (
+    echo.
+    echo  [WARN] Token does not start with "hf_" — double-check you copied it correctly.
+    echo  [WARN] Continuing anyway, but the download may fail if the token is invalid.
+    echo.
+)
+
+:: Save token to file for future runs
+echo %HF_TOKEN%>"%TOKEN_FILE%"
+echo  [OK] Token saved to hf_token.txt ^(gitignored — will not be committed^).
+echo  [OK] Future runs will load it automatically — no need to enter it again.
+echo.
+
+:token_ready
+
 
 :: ──────────────────────────────────────────────────────────
 ::  COLORS / HEADER
